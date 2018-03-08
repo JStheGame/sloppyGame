@@ -1,5 +1,66 @@
 /* POWERUP SCRIPTS */
 
+
+function textDisplay(x, y, msg) {
+	//create a new div (class textDisplay)
+	const $text = $("<div>", {class: "screenText"});
+	$text.css({left: x, top: y});
+	$text.html(msg);
+	$text.appendTo($rectangle);
+
+	//set a timeout to remove the div
+	setTimeout(_ => elementRemove($text), 1000);
+}
+
+function elementRemove(element) {
+	element.remove();
+}
+
+
+const powerUpScores = {
+	"speed up": 250,
+	"embiggen": 1000,
+	"invincibility": 0,
+	"replenish": 250
+};
+
+const powerUpTypes = [
+	"speed up",
+	"speed up",
+	"embiggen",
+	"invincibility",
+	"replenish"
+];
+
+function shuffle(arr) {
+	for(let i = arr.length - 1; i; i--) {
+		//find a random index less than or equal to the current index
+		const j = Math.floor(Math.random() * (i + 1));
+
+		//do the swap
+		[arr[i], arr[j]] = [arr[j], arr[i]];
+	}
+
+	return arr;
+}
+
+
+const randomType = (function generateRandomizer() {
+	const queue = shuffle([...powerUpTypes]);
+	const length = powerUpTypes.length;
+
+	function randomizer() {
+		if(queue.length < length) {
+			queue.push(...shuffle([...powerUpTypes]));
+		}
+
+		return queue.shift();
+	}
+
+	return randomizer;
+})();
+
+
 //the soul
 function PowerUp(x, y, id, type) {
 	this.x = x;
@@ -11,6 +72,9 @@ function PowerUp(x, y, id, type) {
 
 	this.remove = function() {
 		$(`#${this.id}`).remove();
+
+		//flash the text
+		textDisplay(this.x + this.width / 2, this.y + this.height / 2, this.type);
 	}
 
 	this.flash = function() {

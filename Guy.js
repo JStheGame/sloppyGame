@@ -1,9 +1,12 @@
 /* AUTONOMOUS GUY SCRIPTS */
 
+
+const newGuySize = 10;
+
 //the soul
 function Guy(x, y, id) {
-	this.width = 10;
-	this.height = 10;
+	this.width = newGuySize;
+	this.height = newGuySize;
 	this.x = x;
 	this.y = y;
 	this.dx = 0;
@@ -79,11 +82,14 @@ function Guy(x, y, id) {
 //the body
 function spawnGuy() {
 	//make a new guy, far enough away from the player
-	let [x, y] = [Math.floor(Math.random() * (width - 20)), 
-				  Math.floor(Math.random() * (height - 20))];
-	let distance = Math.sqrt((x - player.x) ** 2 + (y - player.y) ** 2);
+	let [x, y] = [Math.floor(Math.random() * (width - newGuySize)), 
+				  Math.floor(Math.random() * (height - newGuySize))];
+	let distance = Math.sqrt(
+		(x - (player.x + player.width / 2)) ** 2 + 
+		(y - (player.y + player.height / 2)) ** 2
+	);
 
-	while(distance < minDistanceFromPlayer) {
+	while(distance < (minDistanceFromPlayer + player.width / 2)) {
 		//too close! do another coordinates
 		[x, y] = [Math.floor(Math.random() * (width - 20)), 
 				  Math.floor(Math.random() * (height - 20))];

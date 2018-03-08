@@ -13,7 +13,7 @@ function * colourGenerator() {
 		b = newB;
 
 		yield `rgb(${r}, ${g}, ${b})`;
-	}	
+	}
 }
 
 function scoreUpdate() {
@@ -23,6 +23,15 @@ function scoreUpdate() {
 function hiScoreUpdate() {
 	$hiscoreboard.html(`hi: ${hiScore}`);
 	localStorage.setItem("hiScore", hiScore);
+}
+
+function juiceUpdate() {
+	const progress = 100 * player.juice / maxJuice;
+
+	const readyToDash = player.juice > dashJuice;
+
+	$progress.css({width: `${progress}%`, backgroundColor: readyToDash ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 0, 0, 0.5)"});
+	$ready.css({opacity: readyToDash ? 1 : 0})
 }
 
 function collisionCheck(sprite1, sprite2) {
@@ -44,8 +53,12 @@ function setTheStage() {
 	player.height = 10;
 	player.x = Math.floor((width - player.width) * Math.random());
 	player.y = Math.floor((height - player.height) * Math.random());
+	player.dx = 0;
+	player.dy = 0;
 	player.speed = 2;
 	player.score = 0;
+	player.juice = maxJuice;
+	player.mortalize();
 
 	scoreUpdate();
 
@@ -60,7 +73,9 @@ function setTheStage() {
 		guys.delete(guy);
 	}
 
-	for(let i = 0; i < 3; i++) {
+	const guysToSpawn = 3;
+
+	for(let i = 0; i < guysToSpawn; i++) {
 		guys.add(spawnGuy());
 	}
 
@@ -70,8 +85,8 @@ function setTheStage() {
 		powerUps.delete(powerUp);
 	};
 
-	powerUps.add(spawnPowerUp("speed"));
-	powerUps.add(spawnPowerUp("size"));
+	powerUps.add(spawnPowerUp(randomType()));
+	powerUps.add(spawnPowerUp(randomType()));
 }
 
 function centre(sprite) {
@@ -93,13 +108,28 @@ function gameFrame() {
 	})
 
 	player.move(x, y);
+	player.recharge(1);
+	juiceUpdate();
 
 	guys.forEach(guy => {
 		guy.move();
 
 		if(collisionCheck(player, guy)) {
-			alert("you died good job");
-			setTheStage();
+			console.log(player.vincible);
+			if(player.vincible) {
+				alert("you died good job");
+				setTheStage();
+			} else {
+				guy.remove();
+				guys.delete(guy);
+				player.score += 500;
+
+				for(let i = 0; i < 2; i++) {
+					guys.add(spawnGuy());
+				}
+
+				scoreUpdate();
+			}
 		}
 	});
 
@@ -111,14 +141,13 @@ function gameFrame() {
 			player.powerUp(powerUp.type);
 			powerUps.delete(powerUp);
 			powerUp.remove();
-			powerUps.add(spawnPowerUp(["speed", "size"][Math.floor(Math.random() * 2)]));
+			powerUps.add(spawnPowerUp(randomType()));
 		}
 	})
 }
 
 
 const scoreStorage = window.localStorage;
-console.log(scoreStorage)
 const colours = colourGenerator();
 const minDistanceFromPlayer = 200;
 let hiScore = localStorage.getItem("hiScore") || 0;
@@ -127,12 +156,27 @@ let hiScore = localStorage.getItem("hiScore") || 0;
 const $rectangle = $("<div>", {id: "rectangle"});
 const [width, height] = [640, 480];
 $rectangle.css({width: width, height: height});
-$scoreboard = $("<div>", {id: "scoreboard"});
+const $scoreboard = $("<div>", {id: "scoreboard", class: "overlay"});
 $scoreboard.appendTo($rectangle);
-$hiscoreboard = $("<div>", {id: "hiscoreboard"});
+const $hiscoreboard = $("<div>", {id: "hiscoreboard", class: "overlay"});
 $hiscoreboard.appendTo($rectangle);
+const $juicebar = $("<div>", {id: "juicebar", class: "overlay"});
+const $container = $("<div>", {id: "juicecontainer"});
+const $ready = $("<div>", {id: "ready"});
+const $progress = $("<div>", {id: "progress"});
+$progress.appendTo($container);
+$ready.html("ready !!");
+$ready.appendTo($container);
+$container.appendTo($juicebar);
+$juicebar.appendTo($rectangle);
 
+let paused = false;
 
+function togglePause() {
+	paused = !paused;
+
+	//eventually have like a paused text on screen or whatever maybe
+}
 
 const keys = {};
 
@@ -140,6 +184,24 @@ const keys = {};
 $(window).on("keydown", event => {
 	const keyCode = event.keyCode;
 	keys[keyCode] = 1;
+
+	if(keyCode === 80) {
+		togglePause();
+	}
+
+	if(keyCode === 90) {
+		let [x, y] = [0, 0];
+
+		[37, 38, 39, 40].forEach(code => {
+			if(keys[code]) {
+				const direction = directions[code];
+				x += direction.x;
+				y += direction.y;
+			}
+		})
+
+		player.dash(x, y);
+	}
 });
 
 $(window).on("keyup", event => {
@@ -154,5 +216,5 @@ $(document).ready(function() {
 
 	setTheStage();
 
-	const gameLoop = setInterval(gameFrame, 1000 / 60);
+	const gameLoop = setInterval(() => {if(!paused) gameFrame()}, 1000 / 60);
 })

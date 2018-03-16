@@ -44,7 +44,6 @@ function shuffle(arr) {
 	return arr;
 }
 
-
 const randomType = (function generateRandomizer() {
 	const queue = shuffle([...powerUpTypes]);
 	const length = powerUpTypes.length;

@@ -113,3 +113,8 @@
 	0% {color: rgba(255, 255, 255, 1);}
 	100% {color: rgba(255, 255, 255, 0);}
 }
+
+.projectile {
+	position: absolute;
+	z-index: 1500;
+}

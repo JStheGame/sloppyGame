@@ -1,7 +1,7 @@
 /* AUTONOMOUS GUY SCRIPTS */
 
-
 const newGuySize = 10;
+const guysToSpawn = 3;
 
 //the soul
 function Guy(x, y, id) {
@@ -72,6 +72,10 @@ function Guy(x, y, id) {
 			left: this.x,
 			top: this.y
 		})
+	}
+
+	this.befriend = function() {
+		this.angry = false;
 	}
 
 	this.remove = function() {

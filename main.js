@@ -27,11 +27,12 @@ function hiScoreUpdate() {
 
 function juiceUpdate() {
 	const progress = 100 * player.juice / maxJuice;
-
 	const readyToDash = player.juice > dashJuice;
 
-	$progress.css({width: `${progress}%`, backgroundColor: readyToDash ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 0, 0, 0.5)"});
-	$ready.css({opacity: readyToDash ? 1 : 0})
+	$progress.css({
+		width: `${progress}%`, 
+		backgroundColor: readyToDash ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 0, 0, 0.5)"
+	});
 }
 
 function collisionCheck(sprite1, sprite2) {
@@ -41,6 +42,14 @@ function collisionCheck(sprite1, sprite2) {
 	return ((x1 + w1 > x2 && x1 < x2 + w2) && (y1 + h1 > y2 && y1 < y2 + h2));
 }
 
+function centre(sprite) {
+	return {
+		x: sprite.x + sprite.width / 2,
+		y: sprite.y + sprite.height / 2
+	}
+}
+
+//reset the game
 function setTheStage() {
 	if(player.score > hiScore) {
 		alert(`hey you did a hi score! it's ${player.score}`);
@@ -49,8 +58,8 @@ function setTheStage() {
 
 	hiScoreUpdate();
 
-	player.width = 10;
-	player.height = 10;
+	player.width = initialSize;
+	player.height = initialSize;
 	player.x = Math.floor((width - player.width) * Math.random());
 	player.y = Math.floor((height - player.height) * Math.random());
 	player.dx = 0;
@@ -73,8 +82,6 @@ function setTheStage() {
 		guys.delete(guy);
 	}
 
-	const guysToSpawn = 3;
-
 	for(let i = 0; i < guysToSpawn; i++) {
 		guys.add(spawnGuy());
 	}
@@ -87,13 +94,8 @@ function setTheStage() {
 
 	powerUps.add(spawnPowerUp(randomType()));
 	powerUps.add(spawnPowerUp(randomType()));
-}
 
-function centre(sprite) {
-	return {
-		x: sprite.x + sprite.width / 2,
-		y: sprite.y + sprite.height / 2
-	}
+	for(const projectile of projectiles) projectile.despawn();
 }
 
 function gameFrame() {
@@ -108,23 +110,31 @@ function gameFrame() {
 	})
 
 	player.move(x, y);
-	player.recharge(1);
+	player.recharge();
 	juiceUpdate();
 
 	guys.forEach(guy => {
-		guy.move();
+		if(guy.angry) guy.move();
+
+		projectiles.forEach(projectile => {
+			if(collisionCheck(guy, projectile)) {
+				guy.befriend();
+				projectile.ricochet();
+			}
+		})
 
 		if(collisionCheck(player, guy)) {
 			console.log(player.vincible);
-			if(player.vincible) {
+			if(player.vincible && guy.angry) {
 				alert("you died good job");
 				setTheStage();
 			} else {
 				guy.remove();
 				guys.delete(guy);
 				player.score += 500;
+				player.juiceUp(200);
 
-				for(let i = 0; i < 2; i++) {
+				for(let i = 0; i < 1; i++) {
 					guys.add(spawnGuy());
 				}
 
@@ -143,9 +153,12 @@ function gameFrame() {
 			powerUp.remove();
 			powerUps.add(spawnPowerUp(randomType()));
 		}
-	})
-}
+	});
 
+	projectiles.forEach(projectile => {
+		projectile.move();
+	});
+}
 
 const scoreStorage = window.localStorage;
 const colours = colourGenerator();
@@ -162,11 +175,8 @@ const $hiscoreboard = $("<div>", {id: "hiscoreboard", class: "overlay"});
 $hiscoreboard.appendTo($rectangle);
 const $juicebar = $("<div>", {id: "juicebar", class: "overlay"});
 const $container = $("<div>", {id: "juicecontainer"});
-const $ready = $("<div>", {id: "ready"});
 const $progress = $("<div>", {id: "progress"});
 $progress.appendTo($container);
-$ready.html("ready !!");
-$ready.appendTo($container);
 $container.appendTo($juicebar);
 $juicebar.appendTo($rectangle);
 
@@ -200,8 +210,13 @@ $(window).on("keydown", event => {
 			}
 		})
 
-		player.dash(x, y);
+		if(x || y) player.dash(x, y);
 	}
+
+	if(keyCode === 87) player.fire(0, -1);
+	if(keyCode === 65) player.fire(-1, 0);
+	if(keyCode === 83) player.fire(0, 1);
+	if(keyCode === 68) player.fire(1, 0);
 });
 
 $(window).on("keyup", event => {

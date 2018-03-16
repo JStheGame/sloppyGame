@@ -8,6 +8,8 @@ const directions = {
 
 const maxJuice = 1000;
 const dashJuice = 200;
+const fireJuice = 100;
+const initialSize = 10;
 
 
 const pause = (function() {
@@ -26,12 +28,15 @@ const player = {
 	y: 100,
 	dx: 0,
 	dy: 0,
-	width: 10,
-	height: 10,
+	chargeSpeed: 1,
+	width: initialSize,
+	height: initialSize,
 	speed: 2,
 	score: 0,
 	juice: maxJuice,
 	vincible: true,
+	projectileSpeed: 5,
+	projectileSize: 10,
 	powerUp: function(type) {
 		const scoreBefore = this.score;
 
@@ -106,8 +111,23 @@ const player = {
 			this.dy += 5 * y * this.speed;
 		}
 	},
-	recharge: function(howMuch) {
+	recharge: function() {
+		this.juice = Math.min(maxJuice, this.juice + this.chargeSpeed);
+	},
+	juiceUp: function(howMuch) {
 		this.juice = Math.min(maxJuice, this.juice + howMuch);
+	},
+	fire: function(dx, dy) {
+		if(this.juice >= fireJuice) {
+			this.juice -= fireJuice;
+			spawnProjectile(
+				this.x, 
+				this.y, 
+				this.projectileSpeed * dx + this.dx, 
+				this.projectileSpeed * dy + this.dy, 
+				this.projectileSize
+			);
+		}
 	}
 };
 
